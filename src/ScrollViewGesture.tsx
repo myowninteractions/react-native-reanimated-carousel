@@ -52,6 +52,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       dataLength,
       overscrollEnabled,
       maxScrollDistancePerSwipe,
+      pagingThreshold,
     },
   } = React.useContext(CTX);
 
@@ -135,9 +136,21 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       * `page size` equals to `size` variable.
       * */
         if (pagingEnabled) {
-          // distance with direction
-          const offset = -(scrollEndTranslation.value >= 0 ? 1 : -1); // 1 or -1
-          const computed = offset < 0 ? Math.ceil : Math.floor;
+           // Determine the offset, can be 0 | -1 | 1
+           const offset = calculateOffset(
+            scrollEndTranslation.value,
+            pagingThreshold,
+          );
+
+          // Determine the page calculation method
+          const computed
+                        = offset === 0 && scrollEndTranslation.value > 0
+                          ? Math.ceil
+                          : offset < 0
+                            ? Math.ceil
+                            : Math.floor;
+
+          // Calculate the page
           const page = computed(-translation.value / size);
 
           if (infinite) {
@@ -168,6 +181,15 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
 
         return translation;
       }
+      // Helper function to calculate the offset
+      function calculateOffset(
+        scrollValue: number,
+        threshold: number | undefined,
+      ) {
+        if (threshold && Math.abs(scrollValue) < threshold) return 0;
+
+        return scrollValue >= 0 ? -1 : 1;
+      }
     },
     [
       withSpring,
@@ -180,6 +202,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       scrollEndVelocity.value,
       maxScrollDistancePerSwipe,
       scrollEndTranslation.value,
+      pagingThreshold
     ],
   );
 
